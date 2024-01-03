@@ -2,6 +2,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local PlayerData = {}
 TargetPed = {}
 TargetZone = {}
+VendMachine = {}
 
 local IsBusy = false
 
@@ -10,77 +11,152 @@ local IsBusy = false
 CreateThread(function()
     for k,v in pairs(Config.Shops) do
         if v ~= nil then
-            if v.Locations then
-                for d,j in pairs(v.Locations) do
-                    if Config.UsePeds then
-                        if j.Ped ~= nil then
-                            local model = ''
-                            local entity = ''
-                            model = j.Ped
-                            RequestModel(model)
-                            while not HasModelLoaded(model) do
-                              Wait(0)
-                            end
-                        
-                            entity = CreatePed(0, model, j.Coords.x,j.Coords.y,j.Coords.z-1,j.Coords.w, true, false)
-                            SetEntityInvincible(entity,true)
-                            FreezeEntityPosition(entity,true)
-                            SetBlockingOfNonTemporaryEvents(entity,true)
-                            TargetPed["Ped"..k..d] = 
-                            exports['qb-target']:AddTargetEntity(entity,{
-                                options = {{icon = "fas fa-comment-dots",label = "Talk",action = function() OpenShopMenu(v,v.Products) end,},},
-                                distance = 2.5,
-                            })
-                        end
-                    else
-                        TargetZone["Shop"..k..d] =
-	                    exports['qb-target']:AddBoxZone("Shop"..k..d, j.Coords, 4.0, 4.0, {name = "Shop"..k..d,heading = j.Coords.w,debugPoly = Config.DebugPoly,minZ=j.Coords.z-2,maxZ=j.Coords.z+2,}, {
-	                    	options = {{icon = v.Icon,label = "Talk",action = function() OpenShopMenu(v,v.Products) end,},},
-	                    	distance = 2.5,
-	                    })
-                    end
-                    if v.Blip then
-                        for P,L in pairs(v.Blip) do
-                            if L.Show then
-                                blip = AddBlipForCoord(j.Coords)
-                                SetBlipAsShortRange(blip, true)
-                                SetBlipSprite(blip, L.Sprite)
-                                SetBlipColour(blip, L.Colour)
-                                SetBlipScale(blip, 0.8)
-                                SetBlipDisplay(blip, 6)
-                                BeginTextCommandSetBlipName('STRING')
-                                if not Config.CombineBlips then
-                                    if L.Label then AddTextComponentString(L.Label)
-                                    else AddTextComponentString("Shop") end
-                                else
-                                    AddTextComponentString("Shop")
+            if v.Enable then
+                if v.Locations then
+                    for d,j in pairs(v.Locations) do
+                        if Config.UsePeds then
+                            if j.Ped ~= nil then
+                                local model = ''
+                                local entity = ''
+                                model = j.Ped
+                                RequestModel(model)
+                                while not HasModelLoaded(model) do
+                                  Wait(0)
                                 end
-                                EndTextCommandSetBlipName(blip)
+                            
+                                entity = CreatePed(0, model, j.Coords.x,j.Coords.y,j.Coords.z-1,j.Coords.w, false, false)
+                                SetEntityInvincible(entity,true)
+                                FreezeEntityPosition(entity,true)
+                                SetBlockingOfNonTemporaryEvents(entity,true)
+                                TargetPed["Ped"..k..d] = 
+                                exports['qb-target']:AddTargetEntity(entity,{
+                                    options = {{icon = "fas fa-comment-dots",label = "Talk",action = function() OpenShopMenu(k,v.Products) end,},},
+                                    distance = 2.5,
+                                })
+                                DebugCode("Ped Made For Shop "..tostring(k).." At Coords "..tostring(j.Coords))
                             end
+                        else
+                            TargetZone["Shop"..k..d] =
+	                        exports['qb-target']:AddBoxZone("Shop"..k..d, j.Coords, 4.0, 4.0, {name = "Shop"..k..d,heading = j.Coords.w,debugPoly = Config.DebugPoly,minZ=j.Coords.z-2,maxZ=j.Coords.z+2,}, {
+	                        	options = {{icon = v.Icon,label = "Talk",action = function() OpenShopMenu(k,v.Products) end,},},
+	                        	distance = 2.5,
+	                        })
+                            DebugCode("BoxZone Made For Shop "..tostring(k).." At Coords "..tostring(j.Coords))
+                        end
+                        if j.ShowBlip then
+                            blip = AddBlipForCoord(j.Coords)
+                            SetBlipAsShortRange(blip, true)
+                            SetBlipSprite(blip, v.Blip.Sprite)
+                            SetBlipColour(blip, v.Blip.Colour)
+                            SetBlipScale(blip, 0.8)
+                            SetBlipDisplay(blip, 6)
+                            BeginTextCommandSetBlipName('STRING')
+                            if not Config.CombineBlips then
+                                if v.Blip.Label then AddTextComponentString(v.Blip.Label)
+                                else AddTextComponentString("Shop") end
+                            else
+                                AddTextComponentString("Shop")
+                            end
+                            EndTextCommandSetBlipName(blip)
                         end
                     end
                 end
             end
         end
     end
+    for k,v in pairs(Config.VendingMachines) do
+        if v.Enable then
+            local label = "Vending Machine"
+            if v.Label then
+                label = v.Label
+            end
+            if v.ExtraLocations then
+                for d,j in pairs(v.ExtraLocations) do
+                    if j.Coords ~= nil then
+                        local model = ''
+                        model = k
+                        RequestModel(model)
+                        while not HasModelLoaded(model) do
+                          Wait(0)
+                        end
+                        VendMachine["Vend"..k..d] = CreateObject(GetHashKey(model), vector3(j.Coords.x, j.Coords.y, j.Coords.z - 1), false, false, true)
+                        PlaceObjectOnGroundProperly(VendMachine["Vend"..k..d])
+                        SetEntityHeading(VendMachine["Vend"..k..d], j.Coords.w)
+                        FreezeEntityPosition(VendMachine["Vend"..k..d], true)
+                        SetEntityAsMissionEntity(VendMachine["Vend"..k..d])
+                        DebugCode("PropMadeFor Vending Machine: "..tostring(k))
+                    end
+                end
+            end
+            exports['qb-target']:AddTargetModel(k, {
+                options = {
+                    {
+                        action = function()
+                            OpenVendingMachine(k,v.Products)
+                        end,
+                        icon = "fas fa-sack-dollar",
+                        label = "Use "..label,
+                    },
+                },
+                distance = 2.5
+            })
+        end
+    end
 end)
 
+function OpenVendingMachine(machine,products)
+    if not Config.VendingMachines[machine] then return end
+    local columns = {
+        {
+            header = Config.VendingMachines[machine].Label,
+            isMenuHeader = true,
+        }
+    }
+    for k,v in ipairs(products) do
+        if QBCore.Shared.Items[v.name] ~= nil then
+            local item = {}
+            item.header = QBCore.Shared.Items[v.name].label
+            local text = "Price: $"
+            item.text = text..v.price
+            if Config.ShowImages then
+                item.icon = v.name
+            end
+            item.params = {
+                event = "sayer-shops:Vend:BuyItem",
+                isServer = true,
+                args = {
+                    item = v.name,
+                    price = v.price,
+                }
+            }
+            table.insert(columns,item)
+        else
+            DebugCode("^2SAYER-SHOPS^7:Cannot Find ^4"..v.name.." ^7in ^4Shared/Items.lua")
+        end
+    end
+    exports['qb-menu']:openMenu(columns)
+end
 
-function OpenShopMenu(options,products)
-    local OP = options
+function OpenShopMenu(shop,products)
+    local OP = Config.Shops[shop]
     local TAB = Config.Products[products]
     local Job = QBCore.Functions.GetPlayerData().job.name
     local issell = nil
+    local shopimage = "<img src=nui://"..Config.ShopLogoLink..shop..".png width=35px style='margin-right: 10px'> "
     local columns = {
         {
-            header = OP.Label,
+            header = shopimage,
+            text = OP.Label,
             isMenuHeader = true,
         },
     }
     for k, v in ipairs(TAB) do
         if QBCore.Shared.Items[v.name] ~= nil then
             local item = {}
-            item.header = "<img src=nui://"..Config.InventoryLink..QBCore.Shared.Items[v.name].image.." width=35px style='margin-right: 10px'> " .. QBCore.Shared.Items[v.name].label
+            item.header = QBCore.Shared.Items[v.name].label
+            if Config.ShowImages then
+                item.icon = v.name
+            end
             local text = ""
             if v.cansell then
                 text = text .. "Buy For $" .. v.price .. "</br>Sell For $" .. v.cansell.Price .. "<br>"
@@ -309,4 +385,9 @@ end
 AddEventHandler('onResourceStop', function(t) if t ~= GetCurrentResourceName() then return end
 	for k in pairs(TargetZone) do exports['qb-target']:RemoveZone(k) end
     for k in pairs(TargetPed) do exports['qb-target']:RemoveTargetEntity(k) end
+    for _,v in pairs(VendMachine) do 
+        if DoesEntityExist(v) then
+            DeleteEntity(v) 
+        end
+    end
 end)

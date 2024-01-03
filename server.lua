@@ -22,6 +22,16 @@ QBCore.Functions.CreateCallback('sayer-shops:CheckMoney', function(source, cb, m
     end
 end)
 
+RegisterNetEvent('sayer-shops:Vend:BuyItem', function(data)
+    local item = data.item
+    local price = tonumber(data.price)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player.Functions.RemoveMoney('cash',price) then
+        Player.Functions.AddItem(item,1)
+        TriggerClientEvent('inventory:client:ItemBox', source, QBCore.Shared.Items[item], "add")
+    end
+end)
+
 RegisterNetEvent('sayer-shops:BuyItem', function(item,amount,worth,account)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
